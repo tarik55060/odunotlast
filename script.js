@@ -46,6 +46,12 @@ function createInputs(donem, count) {
     input.placeholder = `Komite ${i}`;
     input.id = `d${donem}_k${i}`;
     container.appendChild(input);
+    input.addEventListener("input", () => {
+      // Sayıyı stringe çevirip uzunluk kontrol et
+      if (input.value.length > 2) {
+        input.value = input.value.slice(0, 2);
+      }
+    });
   }
 }
 
