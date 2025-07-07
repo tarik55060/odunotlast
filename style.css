@@ -212,6 +212,10 @@ body.dark-mode .gecmis-item {
   color: #eee;
 }
 
+body.dark-mode .result {
+  color: #eee;
+}
+
 /* --- Responsive Design --- */
 @media (max-width: 900px) {
   .tabs {
