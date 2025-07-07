@@ -235,63 +235,6 @@ function gosterGecmis(donem) {
   sonucDiv.appendChild(ul);
 }
 
-// Basit bar chart çizimi (canvas kullanarak)
-function cizBarChart(donem, notlar) {
-  const sonucDiv = document.getElementById(`sonuc${donem}`);
-  // Önce varsa eski canvas kaldır
-  let eskiCanvas = document.getElementById(`barChart${donem}`);
-  if (eskiCanvas) eskiCanvas.remove();
-
-  const canvas = document.createElement("canvas");
-  canvas.id = `barChart${donem}`;
-  canvas.width = 300;
-  canvas.height = 150;
-  canvas.style.marginTop = "15px";
-  sonucDiv.appendChild(canvas);
-
-  const ctx = canvas.getContext("2d");
-
-  const barWidth = 40;
-  const gap = 20;
-  const maxHeight = 100; // Not max değeri 100, ölçekleme için
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Barları çiz
-  notlar.forEach((not, i) => {
-    let barHeight = (not / 100) * maxHeight;
-    let x = gap + i * (barWidth + gap);
-    let y = canvas.height - barHeight - 20;
-
-    // Bar arka planı
-    ctx.fillStyle = "#3498db";
-    ctx.fillRect(x, y, barWidth, barHeight);
-
-    // Komite numarası yazısı
-    ctx.fillStyle = "#000";
-    ctx.font = "14px Arial";
-    ctx.fillText(`K${i + 1}`, x + 12, canvas.height - 5);
-
-    // Not değeri üstünde
-    ctx.fillStyle = "#000";
-    ctx.font = "12px Arial";
-    ctx.fillText(not.toFixed(1), x + 10, y - 5);
-  });
-
-  // Y ekseni çizgileri (0-100 arası 20 şer birim)
-  ctx.strokeStyle = "#ccc";
-  ctx.fillStyle = "#000";
-  ctx.font = "12px Arial";
-  for (let i = 0; i <= 100; i += 20) {
-    let y = canvas.height - (i / 100) * maxHeight - 20;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-    ctx.fillText(i, 5, y - 2);
-  }
-}
-
 // Paylaş butonu ekle
 function eklePaylasButonu(sonucDiv, sonucMetni) {
   // Önce varsa eski paylaş butonu kaldır
