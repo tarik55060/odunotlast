@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ODÜ Tıp Not Hesaplama Aracı - Dönem I, II ve III için not hesaplama, destek olma ve gece modu özellikleri."
+    />
+    <meta
+      name="keywords"
+      content="ODÜ, Tıp, Not Hesaplama, Dönem I, Dönem II, Dönem III, Gece Modu, Destek Ol"
+    />
+    <meta name="author" content="Tarık Baran Albayrak" />
+    <title>ODÜ Tıp Not Hesaplama</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .result img {
+        margin-top: 10px;
+      }
+      canvas {
+        display: block;
+        margin: 10px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div style="text-align: center; margin-bottom: 15px">
+        <button id="darkModeToggle" style="padding: 8px 16px; cursor: pointer">
+          🌙 Gece Modu Aç
+        </button>
+      </div>
+      <h1>ODÜ Tıp Dönem Sınav Hesaplayıcı</h1>
+    </header>
+
+    <nav class="tabs" aria-label="Dönemler">
+      <button onclick="showTab('donem1')">Dönem I</button>
+      <button onclick="showTab('donem2')">Dönem II</button>
+      <button onclick="showTab('donem3')">Dönem III</button>
+    </nav>
+
+    <main>
+      <section id="donem1" class="tab-content">
+        <h2>Dönem I</h2>
+        <div class="inputs" id="inputs1"></div>
+        <button onclick="hesapla(1, 5)">Hesapla</button>
+        <div id="sonuc1" class="result"></div>
+      </section>
+
+      <section id="donem2" class="tab-content">
+        <h2>Dönem II</h2>
+        <div class="inputs" id="inputs2"></div>
+        <button onclick="hesapla(2, 6)">Hesapla</button>
+        <div id="sonuc2" class="result"></div>
+      </section>
+
+      <section id="donem3" class="tab-content">
+        <h2>Dönem III</h2>
+        <div class="inputs" id="inputs3"></div>
+        <button onclick="hesapla(3, 6)">Hesapla</button>
+        <div id="sonuc3" class="result"></div>
+      </section>
+
+      <div class="destekKutusu" style="text-align: center; margin-top: 20px">
+        <button class="destekButton" onclick="toggleDestek()">
+          💖 Destek Ol
+        </button>
+
+        <div
+          id="destekKutusu"
+          style="
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            font-family: sans-serif;
+          "
+        >
+          <h3 style="margin-top: 0">
+            Bu siteyi beğendiyseniz linkteki isim hakkı giderleri için destek
+            olabilirsiniz
+          </h3>
+
+          <p style="margin: 5px 0">
+            <strong>Ad Soyad:</strong>
+            <span id="adSoyad">Tarık Baran Albayrak</span>
+            <button onclick="kopyala('adSoyad')" style="margin-left: 10px">
+              Kopyala
+            </button>
+          </p>
+
+          <p style="margin: 5px 0">
+            <strong>IBAN:</strong>
+            <span id="iban">TR920011100000000120914687</span>
+            <button onclick="kopyala('iban')" style="margin-left: 10px">
+              Kopyala
+            </button>
+          </p>
+
+          <p style="font-size: 0.9em; color: #666">
+            Açıklama kısmına <em>“Odunot Destek”</em> yazabilirsiniz.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>
+        Bu site, T.C. Ordu Üniversitesi TIP FAKÜLTESİ öğrencileri için
+        hazırlanmıştır. Herhangi bir resmi kurumla bağlantısı yoktur.
+      </p>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
