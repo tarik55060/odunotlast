@@ -62,20 +62,6 @@ h1 {
   outline: none;
 }
 
-/* Aktif tab vurgusu */
-.tabs button.active-tab {
-  background: #3498db;
-  color: #fff;
-  border-color: #2980b9;
-  font-weight: bold;
-}
-
-body.dark-mode .tabs button.active-tab {
-  background: #2980b9;
-  color: #fff;
-  border-color: #1a6fa0;
-}
-
 .tab-content {
   display: none;
   margin-top: 20px;
@@ -190,7 +176,7 @@ footer {
   background: transparent;
 }
 
-/* --- Gece Modu --- */
+/* --- Gece Modu için eklemeler --- */
 body.dark-mode {
   background-color: #121212;
   color: #e0e0e0;
@@ -203,8 +189,8 @@ body.dark-mode .tab-content {
 }
 
 body.dark-mode #destekKutusu {
-  background-color: #1e1e1e;
-  border-color: #333;
+  background-color: #1e1e1e !important;
+  border-color: #333 !important;
   color: #eee;
 }
 
@@ -301,8 +287,8 @@ body.dark-mode .result {
   }
 
   #destekKutusu {
-    max-width: 98vw;
-    padding: 8px;
+    max-width: 98vw !important;
+    padding: 8px !important;
     font-size: 0.98em;
   }
 
