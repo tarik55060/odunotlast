@@ -35,6 +35,7 @@ function showTab(tabId) {
 function createInputs(donem, count) {
   const container = document.getElementById(`inputs${donem}`);
   container.innerHTML = "";
+
   for (let i = 1; i <= count; i++) {
     const input = document.createElement("input");
     input.type = "number";
@@ -42,47 +43,18 @@ function createInputs(donem, count) {
     input.max = 100;
     input.placeholder = `Komite ${i}`;
     input.id = `d${donem}_k${i}`;
+    input.style.width = "90px";
     container.appendChild(input);
 
-    // Düzeltme #3: 100 girilebilmesi için max 3 karakter (0-100 arası)
     input.addEventListener("input", () => {
       if (input.value.length > 3) {
         input.value = input.value.slice(0, 3);
       }
-      // 100'ü aşmasın
       if (parseFloat(input.value) > 100) {
         input.value = 100;
       }
     });
   }
-
-  // Bütünleme notu alanı
-  const butunlemeLabel = document.createElement("label");
-  butunlemeLabel.style.display = "block";
-  butunlemeLabel.style.marginTop = "12px";
-  butunlemeLabel.style.fontSize = "0.9em";
-  butunlemeLabel.style.color = "#888";
-  butunlemeLabel.textContent = "Bütünleme notu (opsiyonel — girersen final yerine kullanılır):";
-  butunlemeLabel.htmlFor = `d${donem}_butunleme`;
-  container.appendChild(butunlemeLabel);
-
-  const butunlemeInput = document.createElement("input");
-  butunlemeInput.type = "number";
-  butunlemeInput.min = 0;
-  butunlemeInput.max = 100;
-  butunlemeInput.placeholder = "Bütünleme notu";
-  butunlemeInput.id = `d${donem}_butunleme`;
-  butunlemeInput.style.marginTop = "4px";
-  container.appendChild(butunlemeInput);
-
-  butunlemeInput.addEventListener("input", () => {
-    if (butunlemeInput.value.length > 3) {
-      butunlemeInput.value = butunlemeInput.value.slice(0, 3);
-    }
-    if (parseFloat(butunlemeInput.value) > 100) {
-      butunlemeInput.value = 100;
-    }
-  });
 }
 
 function hesapla(donem, komiteSayisi) {
@@ -96,33 +68,18 @@ function hesapla(donem, komiteSayisi) {
     notlar.push(val);
   }
 
-  // Bütünleme notu varsa al
-  const butunlemeInput = document.getElementById(`d${donem}_butunleme`);
-  let butunlemeNotu = null;
-  if (butunlemeInput && butunlemeInput.value !== "") {
-    let bVal = parseFloat(butunlemeInput.value);
-    if (!isNaN(bVal) && bVal >= 0 && bVal <= 100) {
-      butunlemeNotu = bVal;
-    }
-  }
-
-  // Düzeltme #5: Her kurul notu önce tek tek yuvarlanır (yönetmelik md. 20/3)
   let yuvarlanmisNotlar = notlar.map((n) => Math.round(n));
-
-  // Ortalama: yuvarlanmış notların ortalaması, sonra tekrar yuvarla (md. 20/5)
   let hamOrtalama = yuvarlanmisNotlar.reduce((a, b) => a + b, 0) / komiteSayisi;
   let yuvarlanmisOrtalama = Math.round(hamOrtalama);
 
   const sonucDiv = document.getElementById(`sonuc${donem}`);
   sonucDiv.innerHTML = "";
 
-  let sonucMetni = `Dönem ${donem} Kurul Ortalaması: ${yuvarlanmisOrtalama}\n`;
-
-  // Düzeltme #1: Finalsiz geçme — hem ortalama >= 75 HEM DE her kuruldan >= 60 (md. 20/7)
   const herKuruldan60 = yuvarlanmisNotlar.every((n) => n >= 60);
 
+  let sonucMetni = `Dönem ${donem} Kurul Ortalaması: ${yuvarlanmisOrtalama}\n`;
+
   if (yuvarlanmisOrtalama >= 75 && herKuruldan60) {
-    // Finalsiz geçti
     sonucDiv.innerHTML = `
       <b>Kurul Ortalamanız: ${yuvarlanmisOrtalama}</b><br>
       🎉 Finalsiz geçtiniz! (Her komiteden ≥60, ortalama ≥75)<br>
@@ -133,28 +90,25 @@ function hesapla(donem, komiteSayisi) {
     sonucMetni += "Finalsiz geçtiniz! 🎉";
 
   } else if (yuvarlanmisOrtalama >= 75 && !herKuruldan60) {
-    // Ortalama 75+ ama bazı kurullardan 60 altı var — finalsiz geçemiyor, uyarı ver
     let altindakiKurullar = yuvarlanmisNotlar
       .map((n, i) => (n < 60 ? `Komite ${i + 1} (${n})` : null))
       .filter(Boolean)
       .join(", ");
 
-    // Yine de final gerekiyor, hesapla
-    const { mesaj, detay } = finalHesapla(yuvarlanmisOrtalama, butunlemeNotu);
-
     sonucDiv.innerHTML = `
       <b>Kurul Ortalamanız: ${yuvarlanmisOrtalama}</b><br>
       ⚠️ Ortalama 75 ve üzeri <b>ama</b> şu komite(ler)den 60 altı not aldınız: <b>${altindakiKurullar}</b><br>
       Yönetmelik gereği finalsiz geçme hakkı yok — finale girmeniz gerekiyor.<br><br>
-      ${mesaj}
+      ${olusturFinalBolumleme(donem, yuvarlanmisOrtalama)}
     `;
-    sonucMetni += `Uyarı: ${altindakiKurullar} için 60 altı. ${detay}`;
+    sonucMetni += `Uyarı: ${altindakiKurullar} için 60 altı. Final gerekiyor.`;
 
   } else {
-    // Normal final / bütünleme hesabı
-    const { mesaj, detay, html } = finalHesapla(yuvarlanmisOrtalama, butunlemeNotu);
-    sonucDiv.innerHTML = `<b>Kurul Ortalamanız: ${yuvarlanmisOrtalama}</b><br>${html || mesaj}`;
-    sonucMetni += detay;
+    sonucDiv.innerHTML = `
+      <b>Kurul Ortalamanız: ${yuvarlanmisOrtalama}</b><br>
+      ${olusturFinalBolumleme(donem, yuvarlanmisOrtalama)}
+    `;
+    sonucMetni += `Kurul ort: ${yuvarlanmisOrtalama}`;
   }
 
   kaydetGecmis(donem, sonucMetni, notlar);
@@ -163,80 +117,93 @@ function hesapla(donem, komiteSayisi) {
   eklePaylasButonu(sonucDiv, sonucMetni);
 }
 
-/**
- * Final veya bütünleme notu gereksinimini hesaplar.
- * Yönetmelik md. 20/6:
- *   dönem sonu başarı notu = kurul_ort * 0.6 + final * 0.4
- *   geçmek için: final >= 50 VE dönem sonu başarı notu >= 60
- *
- * Düzeltme #2: Gereken final notu <= 50 ise "50 alsan yeterli" demek YANLIŞ
- * çünkü öğrenci 50'nin altında alamaz, doğrusu "50 alman yeterli, geçersin" demek.
- */
-function finalHesapla(yuvarlanmisOrtalama, butunlemeNotu = null) {
-  const etiket = butunlemeNotu !== null ? "Bütünleme" : "Final";
-
-  // Geçmek için gereken minimum final notu:
-  // dönem_sonu = ort*0.6 + final*0.4 >= 60  →  final >= (60 - ort*0.6) / 0.4
-  // Ayrıca final >= 50 zorunlu (md. 20/6)
+function olusturFinalBolumleme(donem, yuvarlanmisOrtalama) {
   const yuzde60 = yuvarlanmisOrtalama * 0.6;
   const matematikselMinFinal = (60 - yuzde60) / 0.4;
-  // Gerçek minimum: ikisinin büyüğü (hem 50 barajı hem formül gereği)
   const minFinal = Math.max(50, matematikselMinFinal);
-  // Yukarı yuvarla (yarım sayıya değil, tam sayıya — öğrenci lehine değil, kesin eşik)
   const minFinalYuvarlanmis = Math.ceil(minFinal);
-
-  if (butunlemeNotu !== null) {
-    // Bütünleme notu girilmiş — sonucu hesapla
-    const donemSonuBaşariNotu = yuvarlanmisOrtalama * 0.6 + butunlemeNotu * 0.4;
-    // Dönem sonu başarı notu yuvarlaması (md. 20/6): .5 ve üzeri → yukarı
-    const yuvarlanmisDSBN = Math.round(donemSonuBaşariNotu);
-
-    if (butunlemeNotu >= 50 && yuvarlanmisDSBN >= 60) {
-      const mesaj = `✅ Bütünleme notunuz ${butunlemeNotu} → Dönem sonu başarı notunuz: <b>${yuvarlanmisDSBN}</b> — <b>Geçtiniz!</b>`;
-      return { mesaj, detay: `Bütünleme: ${butunlemeNotu}, DSBN: ${yuvarlanmisDSBN} Geçti.`, html: mesaj };
-    } else {
-      let sebep = [];
-      if (butunlemeNotu < 50) sebep.push(`Bütünleme barajı olan 50'nin altında (${butunlemeNotu})`);
-      if (yuvarlanmisDSBN < 60) sebep.push(`Dönem sonu başarı notu 60'ın altında (${yuvarlanmisDSBN})`);
-      const mesaj = `❌ Bütünleme notunuz ${butunlemeNotu} → Dönem sonu başarı notunuz: <b>${yuvarlanmisDSBN}</b> — <b>Başarısız.</b><br>Sebep: ${sebep.join(", ")}`;
-      return { mesaj, detay: `Bütünleme: ${butunlemeNotu}, DSBN: ${yuvarlanmisDSBN} Başarısız.`, html: mesaj };
-    }
-  }
-
-  // Final notu girilmemiş — ne kadar alması gerektiğini söyle
-  if (minFinalYuvarlanmis > 100) {
-    // Matematiksel olarak imkânsız
-    const mesaj = `
-      <div style="font-size: 22px; color: #d9534f; margin-top: 10px;">
-        😢 Ne yazık ki finalden <b>${minFinalYuvarlanmis}</b> almanız gerekiyor.<br>
-        Bu mümkün değil, <b>sınıfta kaldınız.</b>
-      </div>
-      <div style="font-size: 18px; margin-top: 15px; color: #a94442;">
-        📚 Yeni bir yıl, yeni bir başlangıç seni bekliyor...<br>
-        <i>Kendini toparla, seneye çok daha iyi olacak!</i>
-      </div>
-      <img src="uzgun-kedi.jpg" alt="Üzgün kedi" style="margin-top: 15px; width: 200px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-    `;
-    return { mesaj, detay: "Geçme imkânsız, sınıfta kaldınız.", html: mesaj };
-  }
-
-  // minFinalYuvarlanmis == 50 → tam barajda, 50 alması yeterli
-  // minFinalYuvarlanmis > 50 → daha yüksek puan lazım
   const donemSonuIf50 = Math.round(yuvarlanmisOrtalama * 0.6 + 50 * 0.4);
 
-  if (minFinalYuvarlanmis <= 50) {
-    const mesaj = `
-      🎉 Finalden <b>50</b> almanız yeterli!<br>
-      (50 aldığınızda dönem sonu başarı notunuz: <b>${donemSonuIf50}</b>)
+  let bilgiHtml = "";
+  if (minFinalYuvarlanmis > 100) {
+    bilgiHtml = `
+      <div style="font-size: 16px; color: var(--danger, #d9534f); margin-top: 8px;">
+        😢 Geçme imkânsız — <b>sınıfta kaldınız.</b>
+      </div>
     `;
-    return { mesaj, detay: `Finalden minimum 50 yeterli. DSBN: ${donemSonuIf50}`, html: mesaj };
+  } else if (minFinalYuvarlanmis <= 50) {
+    const dsbn = donemSonuIf50;
+    bilgiHtml = `
+      <div style="margin-top: 8px;">
+        Finalden <b>50</b> almanız yeterli.
+        (50 aldığınızda dönem sonu başarı notunuz: <b>${dsbn}</b>)
+      </div>
+    `;
   } else {
     const donemSonuIfMin = Math.round(yuvarlanmisOrtalama * 0.6 + minFinalYuvarlanmis * 0.4);
-    const mesaj = `
-      ${etiket} sınavından geçmek için minimum <b>${minFinalYuvarlanmis}</b> almanız gerekiyor.<br>
-      (${minFinalYuvarlanmis} aldığınızda dönem sonu başarı notunuz: <b>${donemSonuIfMin}</b>)
+    bilgiHtml = `
+      <div style="margin-top: 8px;">
+        Finalden geçmek için en az <b>${minFinalYuvarlanmis}</b> almanız gerekiyor.
+        (${minFinalYuvarlanmis} aldığınızda dönem sonu başarı notunuz: <b>${donemSonuIfMin}</b>)
+      </div>
     `;
-    return { mesaj, detay: `${etiket} min: ${minFinalYuvarlanmis}, DSBN: ${donemSonuIfMin}`, html: mesaj };
+  }
+
+  return `
+    ${bilgiHtml}
+    <div style="margin-top: 16px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; background: rgba(0,0,0,0.03);">
+      <b>Final veya Bütünleme notunuzu girin:</b><br><br>
+      <label>
+        <input type="radio" name="finalTur_${donem}" value="final" checked onchange="guncelleFinalSonuc(${donem}, ${yuvarlanmisOrtalama})">
+        Final
+      </label>
+      &nbsp;&nbsp;
+      <label>
+        <input type="radio" name="finalTur_${donem}" value="butunleme" onchange="guncelleFinalSonuc(${donem}, ${yuvarlanmisOrtalama})">
+        Bütünleme
+      </label>
+      <br><br>
+      <input
+        type="number" min="0" max="100"
+        id="finalNotu_${donem}"
+        placeholder="Notunuzu girin (0-100)"
+        style="width: 160px;"
+        oninput="guncelleFinalSonuc(${donem}, ${yuvarlanmisOrtalama})"
+      >
+      <div id="finalSonucDetay_${donem}" style="margin-top: 10px;"></div>
+    </div>
+  `;
+}
+
+function guncelleFinalSonuc(donem, yuvarlanmisOrtalama) {
+  const input = document.getElementById(`finalNotu_${donem}`);
+  if (!input) return;
+
+  if (input.value.length > 3) input.value = input.value.slice(0, 3);
+  if (parseFloat(input.value) > 100) input.value = 100;
+
+  const detayDiv = document.getElementById(`finalSonucDetay_${donem}`);
+  if (!detayDiv) return;
+
+  const val = parseFloat(input.value);
+  if (isNaN(val)) {
+    detayDiv.innerHTML = "";
+    return;
+  }
+
+  const turRadio = document.querySelector(`input[name="finalTur_${donem}"]:checked`);
+  const tur = turRadio ? turRadio.value : "final";
+  const etiket = tur === "butunleme" ? "Bütünleme" : "Final";
+
+  const dsbn = Math.round(yuvarlanmisOrtalama * 0.6 + val * 0.4);
+
+  if (val >= 50 && dsbn >= 60) {
+    detayDiv.innerHTML = `✅ ${etiket} notunuz ${val} → Dönem sonu başarı notunuz: <b>${dsbn}</b> — <b>Geçtiniz!</b>`;
+  } else {
+    let sebep = [];
+    if (val < 50) sebep.push(`${etiket} barajı olan 50'nin altında (${val})`);
+    if (dsbn < 60) sebep.push(`Dönem sonu başarı notu 60'ın altında (${dsbn})`);
+    detayDiv.innerHTML = `❌ ${etiket} notunuz ${val} → Dönem sonu başarı notunuz: <b>${dsbn}</b> — <b>Başarısız.</b><br><small>${sebep.join(", ")}</small>`;
   }
 }
 
