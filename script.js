@@ -2,18 +2,7 @@ window.onload = () => {
   createInputs(1, 5);
   createInputs(2, 6);
   createInputs(3, 6);
-
-  // URL'den dönem belirle, yoksa ilk dönemi göster
-  const params = new URLSearchParams(location.search);
-  const hashDonem = location.hash.replace("#", "");
-  if (hashDonem && document.getElementById(hashDonem)) {
-    showTab(hashDonem);
-  } else {
-    showTab("donem1");
-  }
-
-  // URL'den notları yükle (createInputs'tan sonra olmalı)
-  urldenNotlariYukle();
+  showTab("donem1");
 
   const darkModeToggle = document.getElementById("darkModeToggle");
 
@@ -33,33 +22,14 @@ window.onload = () => {
     darkModeToggle.textContent = "☀️ Gece Modu Kapat";
   }
 
-  [1, 2, 3].forEach((donem) => {
-    gosterGecmis(donem);
-    ekleGeriYukleButonu(donem, donem === 1 ? 5 : 6);
-  });
-
-  addClearLocalStorageButton();
-  addClearFieldsButton();
+  [1, 2, 3].forEach((donem) => gosterGecmis(donem));
 };
 
 function showTab(tabId) {
   document
     .querySelectorAll(".tab-content")
     .forEach((tab) => (tab.style.display = "none"));
-
-  // Aktif tab butonunu vurgula
-  document.querySelectorAll(".tabs button").forEach((btn) => {
-    btn.classList.remove("active-tab");
-  });
-
   document.getElementById(tabId).style.display = "block";
-
-  // İlgili tab butonuna aktif sınıf ekle
-  const tabIndex = { donem1: 0, donem2: 1, donem3: 2 };
-  const buttons = document.querySelectorAll(".tabs button");
-  if (tabIndex[tabId] !== undefined && buttons[tabIndex[tabId]]) {
-    buttons[tabIndex[tabId]].classList.add("active-tab");
-  }
 }
 
 function createInputs(donem, count) {
@@ -82,13 +52,6 @@ function createInputs(donem, count) {
       }
       if (parseFloat(input.value) > 100) {
         input.value = 100;
-      }
-    });
-
-    // Enter tuşuyla hesaplama
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        hesapla(donem, count);
       }
     });
   }
@@ -150,9 +113,8 @@ function hesapla(donem, komiteSayisi) {
 
   kaydetGecmis(donem, sonucMetni, notlar);
   gosterGecmis(donem);
+  cizBarChart(donem, notlar);
   eklePaylasButonu(sonucDiv, sonucMetni);
-  ekleUrlPaylasButonu(sonucDiv, donem, komiteSayisi);
-  ekleGeriYukleButonu(donem, komiteSayisi);
 }
 
 function olusturFinalBolumleme(donem, yuvarlanmisOrtalama) {
@@ -355,98 +317,6 @@ function eklePaylasButonu(sonucDiv, sonucMetni) {
   sonucDiv.appendChild(btn);
 }
 
-// ── YENİ: URL ile paylaşım ──────────────────────────────────────────────────
-
-function ekleUrlPaylasButonu(sonucDiv, donem, komiteSayisi) {
-  let eskiButon = sonucDiv.querySelector(".urlPaylasBtn");
-  if (eskiButon) eskiButon.remove();
-
-  const btn = document.createElement("button");
-  btn.className = "urlPaylasBtn";
-  btn.textContent = "🔗 Link ile Paylaş";
-  btn.style.marginTop = "15px";
-  btn.style.marginLeft = "10px";
-  btn.style.padding = "8px 16px";
-  btn.style.cursor = "pointer";
-
-  btn.onclick = () => {
-    let notlar = [];
-    for (let i = 1; i <= komiteSayisi; i++) {
-      let val = document.getElementById(`d${donem}_k${i}`).value;
-      notlar.push(val || 0);
-    }
-    const params = new URLSearchParams();
-    params.set(`d${donem}`, notlar.join(","));
-    const url = `${location.origin}${location.pathname}?${params.toString()}#donem${donem}`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => alert("Link kopyalandı! Arkadaşınıza gönderebilirsiniz."))
-      .catch(() => alert("Kopyalama başarısız oldu."));
-  };
-
-  sonucDiv.appendChild(btn);
-}
-
-function urldenNotlariYukle() {
-  const params = new URLSearchParams(location.search);
-  let yuklenenDonem = null;
-
-  [1, 2, 3].forEach((donem) => {
-    const deger = params.get(`d${donem}`);
-    if (!deger) return;
-
-    const notlar = deger.split(",");
-    notlar.forEach((n, i) => {
-      const input = document.getElementById(`d${donem}_k${i + 1}`);
-      if (input) input.value = n;
-    });
-
-    yuklenenDonem = donem;
-  });
-
-  // URL'de hangi dönem varsa onu aç
-  if (yuklenenDonem) {
-    showTab(`donem${yuklenenDonem}`);
-  }
-}
-
-// ── YENİ: Son notları geri yükle butonu ────────────────────────────────────
-
-function ekleGeriYukleButonu(donem, komiteSayisi) {
-  const container = document.getElementById(`donem${donem}`);
-  if (!container) return;
-
-  // Varsa eskisini sil
-  const eskiButon = container.querySelector(".geriYukleBtn");
-  if (eskiButon) eskiButon.remove();
-
-  let key = `odunot_gecmis_donem${donem}`;
-  let gecmis = JSON.parse(localStorage.getItem(key)) || [];
-  if (gecmis.length === 0) return; // geçmiş yoksa butonu gösterme
-
-  const btn = document.createElement("button");
-  btn.className = "geriYukleBtn";
-  btn.textContent = "↩️ Son Notları Geri Yükle";
-  btn.style.marginTop = "8px";
-  btn.style.cursor = "pointer";
-
-  btn.onclick = () => {
-    const sonNotlar = gecmis[0].notlar; // en son hesaplanan
-    sonNotlar.forEach((n, i) => {
-      const input = document.getElementById(`d${donem}_k${i + 1}`);
-      if (input) input.value = n;
-    });
-  };
-
-  // Hesapla butonunun hemen arkasına ekle
-  const hesaplaBtn = container.querySelector(`button[onclick^="hesapla"]`);
-  if (hesaplaBtn) {
-    hesaplaBtn.insertAdjacentElement("afterend", btn);
-  }
-}
-
-// ── Mevcut: Geçmişi / Alanları temizle butonları ──────────────────────────
-
 const donemler = ["donem1", "donem2", "donem3"];
 
 function addClearLocalStorageButton() {
@@ -465,9 +335,7 @@ function addClearLocalStorageButton() {
     btn.style.cursor = "pointer";
     btn.onclick = () => {
       if (confirm("Geçmiş sonuçlarınızı temizlemek istediğinize emin misiniz?")) {
-        // Sadece bu döneme ait geçmişi sil
-        const donemNo = donem.replace("donem", "");
-        localStorage.removeItem(`odunot_gecmis_donem${donemNo}`);
+        localStorage.clear();
         alert("Geçmiş başarıyla temizlendi.");
         location.reload();
       }
@@ -501,3 +369,6 @@ function addClearFieldsButton() {
     hesaplaBtn.insertAdjacentElement("afterend", btn);
   });
 }
+
+addClearLocalStorageButton();
+addClearFieldsButton();
