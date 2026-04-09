@@ -77,7 +77,36 @@ function hesapla(donem, komiteSayisi) {
 
   const herKuruldan60 = yuvarlanmisNotlar.every((n) => n >= 60);
 
-  let sonucMetni = `Dönem ${donem} Kurul Ortalaması: ${yuvarlanmisOrtalama}\n`;
+  // Zengin kopyalama metni
+  const _notlarStr = notlar.map((n, i) => `Komite ${i + 1}: ${Math.round(n)}`).join("\n");
+  const _yuzde60 = yuvarlanmisOrtalama * 0.6;
+  const _minFinalHam = (59.5 - _yuzde60) / 0.4;
+  const _minFinal = Math.max(50, _minFinalHam);
+  const _minFinalYuv = Math.ceil(_minFinal);
+  let _durumStr = "";
+  if (yuvarlanmisOrtalama >= 75 && herKuruldan60) {
+    _durumStr = "Sonuç: FİNALSİZ GEÇTİNİZ 🎉";
+  } else if (_minFinalYuv > 100) {
+    _durumStr = "Sonuç: Geçme imkânsız 😢";
+  } else if (_minFinalYuv <= 50) {
+    const _d50 = Math.round(_yuzde60 + 50 * 0.4);
+    _durumStr = `Finalden 50 almanız yeterli. (50 aldığınızda dönem sonu başarı notu: ${_d50})`;
+  } else {
+    const _hamD = _yuzde60 + _minFinalYuv * 0.4;
+    const _d = Math.round(_hamD);
+    const _dStr = _hamD % 1 === 0 ? `${_d}` : `${_hamD.toFixed(1)} → ${_d}`;
+    _durumStr = `Finalden geçmek için en az ${_minFinalYuv} almanız gerekiyor. (Dönem sonu başarı notu: ${_dStr})`;
+  }
+  let sonucMetni = [
+    `📊 ODÜ Tıp Dönem ${donem} Sonuçları`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    _notlarStr,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `Kurul Ortalaması: ${yuvarlanmisOrtalama}`,
+    _durumStr,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `odutipnot.com.tr`
+  ].join("\n");
 
   if (yuvarlanmisOrtalama >= 75 && herKuruldan60) {
     sonucDiv.innerHTML = `
@@ -87,7 +116,7 @@ function hesapla(donem, komiteSayisi) {
       <canvas id="confetti${donem}"></canvas>
     `;
     konfetiYagdir(`confetti${donem}`);
-    sonucMetni += "Finalsiz geçtiniz! 🎉";
+
 
   } else if (yuvarlanmisOrtalama >= 75 && !herKuruldan60) {
     let altindakiKurullar = yuvarlanmisNotlar
@@ -101,14 +130,14 @@ function hesapla(donem, komiteSayisi) {
       Yönetmelik gereği finalsiz geçme hakkı yok — finale girmeniz gerekiyor.<br><br>
       ${olusturFinalBolumleme(donem, yuvarlanmisOrtalama)}
     `;
-    sonucMetni += `Uyarı: ${altindakiKurullar} için 60 altı. Final gerekiyor.`;
+
 
   } else {
     sonucDiv.innerHTML = `
       <b>Kurul Ortalamanız: ${yuvarlanmisOrtalama}</b><br>
       ${olusturFinalBolumleme(donem, yuvarlanmisOrtalama)}
     `;
-    sonucMetni += `Kurul ort: ${yuvarlanmisOrtalama}`;
+
   }
 
   kaydetGecmis(donem, sonucMetni, notlar);
