@@ -115,6 +115,7 @@ function hesapla(donem, komiteSayisi) {
   gosterGecmis(donem);
   cizBarChart(donem, notlar);
   eklePaylasButonu(sonucDiv, sonucMetni);
+  ekleAciklamaButonu(sonucDiv, donem, notlar, yuvarlanmisOrtalama);
 }
 
 function olusturFinalBolumleme(donem, yuvarlanmisOrtalama) {
@@ -249,6 +250,192 @@ function konfetiYagdir(canvasId) {
 function toggleDestek() {
   const kutu = document.getElementById("destekKutusu");
   kutu.style.display = kutu.style.display === "block" ? "none" : "block";
+}
+
+// ───────────────────────────────────────────────
+// HESAPLAMA AÇIKLAMA POPUP
+// ───────────────────────────────────────────────
+
+function aciklamaGoster(donem, notlar, yuvarlanmisOrtalama) {
+  const eskiOverlay = document.getElementById("aciklamaOverlay");
+  if (eskiOverlay) eskiOverlay.remove();
+
+  const yuvarlanmisNotlar = notlar.map((n) => Math.round(n));
+  const komiteSayisi = notlar.length;
+  const hamOrtalama = yuvarlanmisNotlar.reduce((a, b) => a + b, 0) / komiteSayisi;
+  const herKuruldan60 = yuvarlanmisNotlar.every((n) => n >= 60);
+
+  // Adım 1: Her notun yuvarlanması
+  const adim1Satirlar = notlar
+    .map((n, i) => {
+      const yuv = Math.round(n);
+      return `<tr>
+        <td style="padding:4px 10px;"">Komite ${i + 1}</td>
+        <td style="padding:4px 10px;">${n}</td>
+        <td style="padding:4px 10px;"><b>${yuv}</b></td>
+      </tr>`;
+    })
+    .join("");
+
+  // Adım 2: Ortalama
+  const toplamStr = yuvarlanmisNotlar.join(" + ");
+  const toplam = yuvarlanmisNotlar.reduce((a, b) => a + b, 0);
+  const adim2 = `
+    <p>(${toplamStr}) = <b>${toplam}</b><br>
+    ${toplam} ÷ ${komiteSayisi} = <b>${hamOrtalama.toFixed(4)}…</b><br>
+    Yuvarlanır → <b>${yuvarlanmisOrtalama}</b></p>`;
+
+  // Adım 3: Finalsiz geçme
+  let adim3Html = "";
+  if (yuvarlanmisOrtalama >= 75 && herKuruldan60) {
+    adim3Html = `
+      <p>✅ Kurul ortalaması <b>≥75</b> <em>ve</em> her komiteden <b>≥60</b> alındığı için
+      yönetmelik gereği (Madde 20/7) finale girmeden başarılı sayılırsınız.<br>
+      Kurul ortalamanız (<b>${yuvarlanmisOrtalama}</b>) dönem sonu başarı notunuz olarak kabul edilir.</p>`;
+  } else if (yuvarlanmisOrtalama >= 75 && !herKuruldan60) {
+    const altindakiler = yuvarlanmisNotlar
+      .map((n, i) => (n < 60 ? `Komite ${i + 1} (${n})` : null))
+      .filter(Boolean)
+      .join(", ");
+    adim3Html = `
+      <p>⚠️ Ortalama <b>≥75</b> ama şu komite(ler)den 60 altı not var: <b>${altindakiler}</b><br>
+      Yönetmelik Madde 20/7 gereği <u>her komiteden ≥60 şartı</u> sağlanmadığından
+      finalsiz geçme hakkı yoktur → finale girilmesi gerekir.</p>`;
+  } else {
+    adim3Html = `
+      <p>Kurul ortalaması <b>${yuvarlanmisOrtalama}</b> — 75'in altında olduğundan
+      finale girilmesi gerekiyor.</p>`;
+  }
+
+  // Adım 4: Dönem sonu başarı notu formülü
+  const adim4 = `
+    <p><b>Dönem Sonu Başarı Notu</b> = Kurul Ortalaması × %60 + Final Notu × %40</p>
+    <p>= ${yuvarlanmisOrtalama} × 0.60 + Final × 0.40</p>
+    <p>= <b>${(yuvarlanmisOrtalama * 0.6).toFixed(1)}</b> + Final × 0.40</p>
+    <p>Geçebilmek için bu sonucun <b>≥60</b> olması <em>ve</em> finalden <b>≥50</b> alınması gerekir (Madde 20/6).</p>`;
+
+  // Adım 5: Minimum final hesabı
+  const yuzde60 = yuvarlanmisOrtalama * 0.6;
+  const matematikselMinFinal = (59.5 - yuzde60) / 0.4;
+  const minFinal = Math.max(50, matematikselMinFinal);
+  const minFinalYuvarlanmis = Math.ceil(minFinal);
+
+  let adim5Html = "";
+  if (!(yuvarlanmisOrtalama >= 75 && herKuruldan60)) {
+    if (minFinalYuvarlanmis > 100) {
+      adim5Html = `
+        <p>Hesap: (59.5 − ${yuzde60.toFixed(1)}) ÷ 0.40 = <b>${matematikselMinFinal.toFixed(2)}</b><br>
+        Bu değer 100'ün üzerinde olduğundan geçmek <b>mümkün değildir</b>.</p>`;
+    } else {
+      const hamDsbnMin = yuvarlanmisOrtalama * 0.6 + minFinalYuvarlanmis * 0.4;
+      const donemSonuIfMin = Math.round(hamDsbnMin);
+      adim5Html = `
+        <p>Dönem sonu başarı notunun ≥60 olması için:<br>
+        ${yuzde60.toFixed(1)} + Final × 0.40 ≥ 59.5<br>
+        Final × 0.40 ≥ ${(59.5 - yuzde60).toFixed(1)}<br>
+        Final ≥ ${matematikselMinFinal.toFixed(2)}<br>
+        50 barajı ile karşılaştır → max(50, ${matematikselMinFinal.toFixed(2)}) = ${minFinal.toFixed(2)}<br>
+        Yukarı yuvarla → <b>${minFinalYuvarlanmis}</b><br><br>
+        Kontrol: ${yuvarlanmisOrtalama} × 0.60 + ${minFinalYuvarlanmis} × 0.40
+        = ${yuzde60.toFixed(1)} + ${(minFinalYuvarlanmis * 0.4).toFixed(1)}
+        = <b>${hamDsbnMin % 1 === 0 ? donemSonuIfMin : hamDsbnMin.toFixed(1)} → ${donemSonuIfMin}</b> ✅</p>
+        <p style="color:#888;font-size:13px;">💡 Neden 59.5? Yönetmeliğe göre ondalık kısmı ≥0.5 olan not yukarı yuvarlanır.
+        Bu yüzden 59.5 → 60 olur ve geçer sayılırsınız.</p>`;
+    }
+  }
+
+  // Adım 6: Yuvarlama kuralı
+  const adim6 = `
+    <p>Yönetmelik Madde 20/6:<br>
+    <em>"Dönem sonu başarı notu virgülden sonraki ilk rakam 5 ve üzerinde ise bir üst,
+    5'ten küçük ise bir alt en yakın tam sayıya tamamlanır."</em></p>
+    <table style="border-collapse:collapse;">
+      <tr><td style="padding:3px 12px;">59.5</td><td>→</td><td style="padding:3px 12px;color:green;"><b>60 ✅ Geçer</b></td></tr>
+      <tr><td style="padding:3px 12px;">59.4</td><td>→</td><td style="padding:3px 12px;color:red;"><b>59 ❌ Geçmez</b></td></tr>
+      <tr><td style="padding:3px 12px;">62.0</td><td>→</td><td style="padding:3px 12px;color:green;"><b>62 ✅ Geçer</b></td></tr>
+    </table>`;
+
+  const adimSayisi = adim5Html ? 6 : 5;
+
+  const icerik = `
+    <div id="aciklamaOverlay" style="
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 9999; display: flex; align-items: center; justify-content: center;
+      padding: 16px; box-sizing: border-box;">
+      <div style="
+        background: var(--bg, #fff); color: var(--text, #222);
+        border-radius: 12px; max-width: 620px; width: 100%;
+        max-height: 85vh; overflow-y: auto;
+        padding: 28px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        position: relative; font-size: 15px; line-height: 1.6;">
+
+        <button onclick="document.getElementById('aciklamaOverlay').remove()"
+          style="position:absolute;top:12px;right:16px;background:none;border:none;
+          font-size:22px;cursor:pointer;line-height:1;opacity:0.6;" title="Kapat">✕</button>
+
+        <h3 style="margin-top:0;border-bottom:2px solid #4a90e2;padding-bottom:8px;">
+          📐 Hesaplama Nasıl Yapılıyor?
+        </h3>
+
+        <h4>1. Her Komite Notu Yuvarlanır</h4>
+        <table style="border-collapse:collapse;width:auto;margin-bottom:8px;border:1px solid #ccc;">
+          <thead>
+            <tr style="background:rgba(0,0,0,0.07);">
+              <th style="padding:5px 10px;text-align:left;border:1px solid #ccc;">Komite</th>
+              <th style="padding:5px 10px;text-align:left;border:1px solid #ccc;">Girilen Not</th>
+              <th style="padding:5px 10px;text-align:left;border:1px solid #ccc;">Yuvarlanmış</th>
+            </tr>
+          </thead>
+          <tbody>${adim1Satirlar}</tbody>
+        </table>
+
+        <h4>2. Kurul Ortalaması Hesaplanır</h4>
+        ${adim2}
+
+        <h4>3. Finalsiz Geçme Kontrolü (Madde 20/7)</h4>
+        ${adim3Html}
+
+        <h4>4. Dönem Sonu Başarı Notu Formülü (Madde 20/6)</h4>
+        ${adim4}
+
+        ${adim5Html ? `<h4>5. Minimum Final Notu Hesabı</h4>${adim5Html}` : ""}
+
+        <h4>${adim5Html ? "6" : "5"}. Yuvarlama Kuralı</h4>
+        ${adim6}
+
+        <div style="text-align:right;margin-top:20px;">
+          <button onclick="document.getElementById('aciklamaOverlay').remove()"
+            style="padding:8px 22px;cursor:pointer;border-radius:6px;
+            background:#4a90e2;color:#fff;border:none;font-size:14px;font-weight:bold;">
+            Kapat
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", icerik);
+
+  document.getElementById("aciklamaOverlay").addEventListener("click", function (e) {
+    if (e.target === this) this.remove();
+  });
+}
+
+function ekleAciklamaButonu(sonucDiv, donem, notlar, yuvarlanmisOrtalama) {
+  const eskiBtn = sonucDiv.querySelector(".aciklama-btn");
+  if (eskiBtn) eskiBtn.remove();
+
+  const btn = document.createElement("button");
+  btn.className = "aciklama-btn";
+  btn.innerHTML = "❓ Nasıl hesaplandı?";
+  btn.title = "Hesaplama adımlarını göster";
+  btn.style.cssText = `
+    margin-top: 10px; margin-left: 8px; padding: 5px 12px;
+    cursor: pointer; border-radius: 6px; border: 1px solid #4a90e2;
+    background: transparent; color: #4a90e2; font-size: 13px;
+  `;
+  btn.onclick = () => aciklamaGoster(donem, notlar, yuvarlanmisOrtalama);
+  sonucDiv.appendChild(btn);
 }
 
 function kopyala(id) {
