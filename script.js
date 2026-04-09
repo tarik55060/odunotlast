@@ -119,7 +119,11 @@ function hesapla(donem, komiteSayisi) {
 
 function olusturFinalBolumleme(donem, yuvarlanmisOrtalama) {
   const yuzde60 = yuvarlanmisOrtalama * 0.6;
-  const matematikselMinFinal = (60 - yuzde60) / 0.4;
+
+  // DÜZELTİLDİ: 60 yerine 59.5 kullanılıyor.
+  // Yönetmeliğe göre dönem sonu başarı notu virgülden sonra ≥5 ise yukarı yuvarlanır.
+  // Yani Math.round(ham) >= 60 olması için ham >= 59.5 yeterli.
+  const matematikselMinFinal = (59.5 - yuzde60) / 0.4;
   const minFinal = Math.max(50, matematikselMinFinal);
   const minFinalYuvarlanmis = Math.ceil(minFinal);
   const donemSonuIf50 = Math.round(yuvarlanmisOrtalama * 0.6 + 50 * 0.4);
