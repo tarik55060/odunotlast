@@ -144,11 +144,12 @@ function olusturFinalBolumleme(donem, yuvarlanmisOrtalama) {
       </div>
     `;
   } else {
-    const donemSonuIfMin = Math.round(yuvarlanmisOrtalama * 0.6 + minFinalYuvarlanmis * 0.4);
+    const hamDsbnMin = yuvarlanmisOrtalama * 0.6 + minFinalYuvarlanmis * 0.4;
+    const donemSonuIfMin = Math.round(hamDsbnMin);
     bilgiHtml = `
       <div style="margin-top: 8px;">
         Finalden geçmek için en az <b>${minFinalYuvarlanmis}</b> almanız gerekiyor.
-        (${minFinalYuvarlanmis} aldığınızda dönem sonu başarı notunuz: <b>${donemSonuIfMin}</b>)
+        (${minFinalYuvarlanmis} aldığınızda dönem sonu başarı notunuz: <b>${hamDsbnMin % 1 === 0 ? donemSonuIfMin : hamDsbnMin.toFixed(1)} → ${donemSonuIfMin}</b>)
       </div>
     `;
   }
