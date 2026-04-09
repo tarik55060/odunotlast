@@ -113,7 +113,6 @@ function hesapla(donem, komiteSayisi) {
 
   kaydetGecmis(donem, sonucMetni, notlar);
   gosterGecmis(donem);
-  cizBarChart(donem, notlar);
   eklePaylasButonu(sonucDiv, sonucMetni);
   ekleAciklamaButonu(sonucDiv, donem, notlar, yuvarlanmisOrtalama);
 }
